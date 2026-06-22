@@ -1,11 +1,11 @@
 ---
 name: spring-i18n
-description: Spring Boot internationalization (i18n) with string-based message codes, database-backed MessageSource, LocaleContextHolder, and async locale propagation. Covers message resolution, locale determination (Accept-Language, param, cookie), I18nUtil tool class, and dynamic message refresh. Java 17+.
+description: Spring Boot internationalization (i18n) — database-backed MessageSource, LocaleResolver (Accept-Language/param/cookie), LocaleContextHolder, I18nUtil, async locale propagation, and background task locale resolution. Complements error-code skill for message resolution. Java 17+.
 ---
 
 # Spring I18N
 
-Internationalization framework for Spring Boot using **string message codes** (not integer codes), database + properties file storage, and `LocaleContextHolder` for thread-local locale access.
+Internationalization framework for Spring Boot using **string message codes**, database + properties file storage, and `LocaleContextHolder` for thread-local locale access. Handles **message resolution and locale management** — the companion `error-code` skill defines error codes and exception handling.
 
 ## Core Rules
 
@@ -16,47 +16,6 @@ Internationalization framework for Spring Boot using **string message codes** (n
 | **Locale in ThreadLocal** | `LocaleContextHolder` holds the current request's locale. Never pass locale as method parameter through service layers. |
 | **Database + file fallback** | Database messages override properties files. Files are defaults, DB allows runtime customization. |
 | **Async propagation** | Wrap async tasks with `LocaleContextHolder.cloneLocaleContext()` to carry locale across threads. |
-
-## Error Code Type System
-
-Error codes are **enum-based**, not raw strings. Each module defines an enum implementing `ErrorCode`:
-
-```java
-public interface ErrorCode {
-    String code();           // "user.password.tooShort"
-    String defaultMessage(); // fallback when MessageSource has no entry
-    int argCount();          // expected {N} placeholder count
-}
-```
-
-### Module Enum
-
-```java
-public enum UserErrorCode implements ErrorCode {
-    EMAIL_EXISTS       ("user.register.emailExists", "Email already registered", 0),
-    PASSWORD_TOO_SHORT ("user.password.tooShort",    "Password must be at least {0} characters", 1),
-    UPDATE_FAILED      ("user.update.failed",        "Failed to update {0}: {1}", 2);
-
-    // ... constructor ...
-}
-```
-
-### Type-Safe Exception (Compile-Time Arg Check)
-
-```java
-// 0 args — compile error if you pass arguments
-throw new BusinessException(UserErrorCode.EMAIL_EXISTS);
-
-// 1 arg — compile error if wrong count
-throw new BusinessException(UserErrorCode.PASSWORD_TOO_SHORT, 8);
-
-// Dynamic escape hatch (runtime arg count)
-BusinessException.ofDynamic(code, args);
-```
-
-Overloaded constructors ensure **wrong arg count = compile error**. Startup validator cross-checks `argCount` against actual `{N}` placeholders in messages.
-
-See `references/error-code.md` for full type system and `references/i18n-validation.md` for startup validation.
 
 ## Architecture
 
@@ -99,8 +58,6 @@ app:
     cache-ttl-minutes: 10     # cache expiration
     default-locale: zh_CN     # fallback when no locale specified
     supported: zh_CN,en_US,ja_JP  # comma-separated
-    validate-on-startup: true # check argCount vs message placeholders on boot
-    scan-package: com.example # base package to scan for *ErrorCode enums
 ```
 
 ## Database Schema (Optional)
@@ -154,35 +111,12 @@ public class UserController {
 @Service
 public class OrderService {
 
-    public void validateStatus(String status) {
-        if (!isValid(status)) {
-            // Compile-time arg count check: STATUS_INVALID has argCount=1
-            throw new BusinessException(OrderErrorCode.STATUS_INVALID, status);
-        }
-    }
-
     public Order create(CreateOrderRequest req) {
         // ... business logic ...
         // Message with placeholder: "Order {orderNo} created successfully"
         String msg = I18nUtil.get("order.create.success", order.getOrderNo());
         eventPublisher.publishEvent(new OrderCreatedEvent(order, msg));
         return order;
-    }
-}
-```
-
-### Exception Handler (Localized error messages)
-
-```java
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ErrorResponse> handle(BusinessException e) {
-        // ErrorResponse.of() auto-detects IntErrorCode (includes intCode) vs plain ErrorCode (intCode=0)
-        return ResponseEntity
-            .status(resolveStatus(e.getErrorCode()))
-            .body(ErrorResponse.of(e));
     }
 }
 ```
@@ -242,9 +176,6 @@ i18nUtil.clearCache();
 
 ## Implementation Notes
 
-- See `references/code-java.md` for full Java implementation (LocaleResolver, MessageSource, I18nUtil, cache, **background task i18n**).
+- See `references/code-java.md` for full Java implementation (DatabaseMessageSource, LocaleResolver, I18nUtil, cache, async propagation, background task locale resolution).
 - See `references/db-schema.md` for complete database schema including multi-tenant variant.
-- See `references/error-code-typed.md` for **recommended** record-based typed error codes (`Err1<Integer>`) — compile-time type safety without `argCount`.
-- See `references/error-code-int.md` for int+string dual code (`IntErr1<T>`) — compatible with legacy systems and mobile SDKs.
-- See `references/error-code.md` for enum-based `ErrorCode` (if you need `values()` or `switch`).
-- See `references/i18n-validation.md` for startup placeholder validation and compile-time detection strategies.
+- For error code definition and exception handling, see the companion `error-code` skill.
