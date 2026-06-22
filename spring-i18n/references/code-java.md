@@ -523,68 +523,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
 }
 ```
 
-## BusinessException (Localized)
-
-```java
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
-@Getter
-public class BusinessException extends RuntimeException {
-
-    private final ErrorCode errorCode;
-    private final transient Object[] args;
-
-    // 0 args — compile error if you pass arguments
-    public BusinessException(ErrorCode errorCode) {
-        this(errorCode, new Object[0]);
-    }
-
-    // 1 arg
-    public BusinessException(ErrorCode errorCode, Object arg0) {
-        this(errorCode, new Object[]{arg0});
-    }
-
-    // 2 args
-    public BusinessException(ErrorCode errorCode, Object arg0, Object arg1) {
-        this(errorCode, new Object[]{arg0, arg1});
-    }
-
-    // 3 args
-    public BusinessException(ErrorCode errorCode, Object arg0, Object arg1, Object arg2) {
-        this(errorCode, new Object[]{arg0, arg1, arg2});
-    }
-
-    // Varargs — private. Use ofDynamic() for runtime-dynamic args.
-    private BusinessException(ErrorCode errorCode, Object[] args) {
-        super(errorCode.code());
-        this.errorCode = errorCode;
-        this.args = args;
-
-        if (args.length != errorCode.argCount()) {
-            log.warn("BusinessException arg count mismatch: {} declares {} args but {} provided",
-                errorCode.code(), errorCode.argCount(), args.length);
-        }
-    }
-
-    // Escape hatch for dynamic arg count
-    public static BusinessException ofDynamic(ErrorCode errorCode, Object... args) {
-        return new BusinessException(errorCode, args);
-    }
-
-    /** Resolved message using current locale. */
-    public String getLocalizedMessage() {
-        return I18nUtil.get(errorCode, args);
-    }
-
-    @Override
-    public String toString() {
-        return errorCode.code() + ": " + getLocalizedMessage();
-    }
-}
-```
-
 ## I18nProperties
 
 ```java
@@ -603,45 +541,6 @@ public class I18nProperties {
     private long cacheTtlMinutes = 10;
     private Locale defaultLocale = Locale.SIMPLIFIED_CHINESE;
     private List<String> supported = List.of("zh_CN", "en_US");
-    private boolean validateOnStartup = true;
-    private String scanPackage = "";
-}
-```
-
-## ErrorResponse (API Return)
-
-```java
-public record ErrorResponse(
-    int code,                       // 0 if not IntErrorCode
-    String error,                   // "user.register.emailExists"
-    String message,                 // localized (already filled)
-    Map<String, Object> i18nData    // placeholder values for frontend i18n template filling
-) {
-    public static ErrorResponse of(BusinessException e) {
-        ErrorCode ec = e.getErrorCode();
-        int numericCode = (ec instanceof IntErrorCode iec) ? iec.intCode() : 0;
-        Map<String, Object> i18nData = argsToMap(ec, e.getArgs());
-        return new ErrorResponse(numericCode, ec.code(), e.getLocalizedMessage(), i18nData);
-    }
-
-    /**
-     * Convert args array to key-value map for i18nData.
-     * Uses argNames() if provided, falls back to numeric index keys.
-     */
-    private static Map<String, Object> argsToMap(ErrorCode code, Object[] args) {
-        if (args == null || args.length == 0) {
-            return Map.of();
-        }
-        String[] names = code.argNames();
-        Map<String, Object> map = new LinkedHashMap<>();
-        for (int i = 0; i < args.length; i++) {
-            String key = (i < names.length && names[i] != null)
-                ? names[i]           // named: "minLength"
-                : String.valueOf(i); // indexed: "0"
-            map.put(key, args[i]);
-        }
-        return map;
-    }
 }
 ```
 
