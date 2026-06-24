@@ -4,14 +4,23 @@ A collection of AI-ready skills and specs for Java Spring Boot development. Desi
 
 ## Available Skills
 
+### Base Skills (foundation)
+
+| Skill | Description |
+|-------|-------------|
+| `error-code` | Unified `ErrorCode` interface: `ErrorCode.of(code, error, message)` factory, variadic `error(args)`, structured `{code, error, message, args}` API response. Module-scoped int code ranges. |
+| `spring-i18n` | String-code message resolution: `I18nUtil.get("code", args...)`. DB-backed `MessageSource` + `LocaleResolver` + async propagation + background task locale. |
+
+### Extension Skills (independent)
+
 | Skill | Description |
 |-------|-------------|
 | `data-reconciliation` | Reconcile data between two services with configurable phases (Pull, Compare, StateCheck, Replay). Generic SPI framework `ReconcilePlugin<A,B>`. |
-| `spring-jwt-user` | Auto-resolve `User` from JWT in controller methods. `@Role` annotation with HandlerInterceptor. Multi-source user support. |
+| `spring-jwt-user` | Auto-resolve `User` from JWT in controller methods. `@Role` annotation with `HandlerInterceptor`. Multi-source user support. |
 | `rbac-role` | Modular RBAC with user+role / +group / +organization. Closure table for hierarchical groups and org units. |
 | `hierarchical-structure` | Generic hierarchical structure service — menus, org trees, category trees. `HierarchicalRepository<E>` and `HierarchicalService<E>`. |
 | `mysql-json-handler` | MySQL JSON column handling with Jackson. Static and dynamic (polymorphic) JSON. Native `->>` / `JSON_EXTRACT` queries. |
-| `spring-i18n` | Internationalization with string message codes. Database-backed MessageSource. Type-safe error codes (`Err1<T>`, `IntErr1<T>`). Background task locale resolution. |
+| `money-quantity-system` | Money & quantity balance management — 6 complexity levels from direct update to sub-accounts + reconciliation. Freeze/unfreeze, audit records, flow tracking. |
 
 ## How to Use
 
@@ -28,67 +37,35 @@ Each skill follows the standard structure:
 
 ```
 skill-name/
-├── SKILL.md              # Entry point: description, rules, patterns
-└── references/           # Detailed implementation docs
-    ├── code-java.md
-    ├── schema.md
-    └── ...
+├── SKILL.md              # Entry point: TL;DR + description + rules
+├── references/           # Detailed implementation docs
+│   ├── spec-*.md         # Core specs / SPI contracts
+│   ├── impl-*.md         # Java implementation
+│   ├── schema-*.md       # Database schema
+│   └── validation-*.md   # Validation / startup checks
+└── tests/                # Spec-level test templates
 ```
 
-**Copy skills to your AI's skills directory.** The exact path depends on your AI platform:
+### Step 3: Tell Your AI
 
-```bash
-# Example: copy to AI skills directory
-# (Replace /path/to/ai/skills with your actual AI skills path)
-cp -r data-reconciliation /path/to/ai/skills/
-cp -r spring-i18n /path/to/ai/skills/
-# ... copy the skills you need
-```
-
-> **Tip:** You don't need all skills. Copy only the ones relevant to your project. Different systems use different subsets.
-
-### Step 3: Let Your AI Learn
-
-Tell your AI to load the skills. Example prompt:
-
-> "Please load the following skills and follow their specs for this project: data-reconciliation, spring-jwt-user, rbac-role."
-
-Your AI will read `SKILL.md` and `references/*.md` to understand the patterns and generate compliant code.
+> "Please load the error-code and spring-i18n base skills, plus data-reconciliation, spring-jwt-user, and rbac-role for this project."
 
 ### Step 4: Start AI-Powered Development
 
-With skills loaded, your AI can:
-
-- Generate database schemas matching the skill's table conventions
-- Write Java code following the skill's SPI interfaces and patterns
-- Handle edge cases defined in the skill specs
-- Maintain consistency across modules using the same skill
-
-## Skill Format
-
-All skills follow the same directory structure:
-
-```
-skill-name/
-├── SKILL.md           # Required: YAML frontmatter + Markdown instructions
-└── references/        # Optional: detailed docs loaded on demand
-    ├── code-java.md   # Java implementation examples
-    ├── schema.md      # Database schema
-    └── ...
-```
+With skills loaded, your AI can generate database schemas, Java code following SPI interfaces, and edge case handling — all consistent with the loaded skill specs.
 
 ## Java Version
 
-All specs target **Java 17+**, with Java 21 features used where beneficial (records, switch expressions, pattern matching).
+All specs target **Java 17+**, with Java 21 features used where beneficial.
 
 ## Contributing
 
-Skills are designed to be modular and self-contained. When adding a new skill:
-
-1. Follow the `SKILL.md + references/` directory structure
-2. Target Java 17+
-3. Prefer interfaces over implementations — the AI fills in the details
-4. Include concrete examples for the most common use case
+1. Follow the `SKILL.md + references/ + tests/` structure
+2. SKILL.md must start with `**TL;DR**` (≤10 lines)
+3. Reference files use role prefixes: `spec-`, `impl-`, `schema-`, `validation-`
+4. Target Java 17+
+5. Prefer interfaces over implementations
+6. Keep skills self-contained — no cross-skill references in `references/`
 
 ## License
 

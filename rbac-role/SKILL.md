@@ -5,6 +5,14 @@ description: Configurable-prefix RBAC model with extensible role sources and clo
 
 # RBAC Role Permission Model
 
+**TL;DR** — Configurable-prefix RBAC with 3 levels: Core (user↔role), +Group (role via group membership), +Organization (closure-table org hierarchy). `source_type`/`source_id` tracks role provenance. Audit-traced assignment/revocation.
+
+```java
+boolean hasPermission(Long userId, String permission);
+List<Role> getRoles(Long userId);         // Core
+List<Role> getRoles(Long userId, Long orgId);  // +Organization
+```
+
 Configurable-prefix RBAC with extensible role sources and closure-table hierarchy for fast tree queries.
 
 ## Table Naming Convention

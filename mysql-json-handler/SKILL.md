@@ -5,6 +5,19 @@ description: MySQL JSON field handling in Java Spring Boot with Jackson polymorp
 
 # MySQL JSON Handler
 
+**TL;DR** — Jackson + MySQL JSON columns. Static pattern: single Java type ↔ single JSON column. Dynamic pattern: `@JsonTypeInfo` discriminator for polymorphic JSON. Native `->>` and `JSON_EXTRACT` queries via MyBatis-Plus or JPA. Always wrap nullable JSON fields in `Optional`.
+
+```java
+// Static
+@TableField(typeHandler = JacksonTypeHandler.class)
+private Address address;
+
+// Dynamic
+@TableField(typeHandler = JacksonTypeHandler.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
+private Payload payload;
+```
+
 Handle MySQL `JSON` type fields in Java with proper serialization, polymorphic deserialization, and native SQL query support.
 
 ## Core Requirements

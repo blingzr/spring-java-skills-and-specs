@@ -344,20 +344,6 @@ public class I18nUtil {
     public static boolean hasMessage(String code) {
         return !code.equals(getOrEmpty(code, currentLocale()));
     }
-
-    // ---- ErrorCode overloads ----
-
-    public static String get(ErrorCode errorCode) {
-        return getOrDefault(errorCode.code(), errorCode.defaultMessage());
-    }
-
-    public static String get(ErrorCode errorCode, Object... args) {
-        return getOrDefault(errorCode.code(), errorCode.defaultMessage(), args);
-    }
-
-    public static String get(ErrorCode errorCode, Locale locale, Object... args) {
-        return getOrDefault(errorCode.code(), locale, errorCode.defaultMessage(), args);
-    }
 }
 ```
 
@@ -652,13 +638,15 @@ public class NotificationService {
 
     /**
      * Send localized email to a specific user.
+     * @param subjectCode message code for subject line
+     * @param bodyCode message code for email body
      */
-    public void sendEmail(Long userId, ErrorCode subject, ErrorCode body, Object... args) {
+    public void sendEmail(Long userId, String subjectCode, String bodyCode, Object... args) {
         UserProfile profile = profileRepo.findById(userId).orElseThrow();
 
         localeExecutor.withUserLocale(userId, () -> {
-            String subjectText = I18nUtil.get(subject, args);
-            String bodyText = I18nUtil.get(body, args);
+            String subjectText = I18nUtil.get(subjectCode, args);
+            String bodyText = I18nUtil.get(bodyCode, args);
 
             emailSender.send(EmailRequest.builder()
                 .to(profile.getEmail())
@@ -671,12 +659,13 @@ public class NotificationService {
 
     /**
      * Send localized SMS to a specific user.
+     * @param templateCode message code for SMS content
      */
-    public void sendSms(Long userId, ErrorCode template, Object... args) {
+    public void sendSms(Long userId, String templateCode, Object... args) {
         UserProfile profile = profileRepo.findById(userId).orElseThrow();
 
         localeExecutor.withUserLocale(userId, () -> {
-            String message = I18nUtil.get(template, args);
+            String message = I18nUtil.get(templateCode, args);
             smsSender.send(profile.getPhone(), message);
         });
     }
@@ -706,15 +695,15 @@ public class WeeklyReportJob {
                     WeeklyReport report = generateReport(userId);
 
                     // All I18nUtil.get() calls inside this block use the user's locale
-                    String subject = I18nUtil.get(ReportEmailSubject.WEEKLY_SUMMARY, report.getWeekRange());
-                    String body = I18nUtil.get(ReportEmailBody.WEEKLY_STATS,
+                    String subject = I18nUtil.get("report.weekly.summary", report.getWeekRange());
+                    String body = I18nUtil.get("report.weekly.stats",
                         report.getTotalOrders(),
                         report.getTotalAmount()
                     );
 
                     notificationService.sendEmail(userId,
-                        ReportEmailSubject.WEEKLY_SUMMARY,
-                        ReportEmailBody.WEEKLY_STATS,
+                        "report.weekly.summary",
+                        "report.weekly.stats",
                         report.getWeekRange(), report.getTotalOrders(), report.getTotalAmount()
                     );
                 });

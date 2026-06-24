@@ -5,6 +5,15 @@ description: Spring Boot JWT-based user argument resolver for controller methods
 
 # Spring JWT User Resolver
 
+**TL;DR** — Auto-resolve `User` in controller parameters from JWT. Define a `User` interface; implement `HandlerMethodArgumentResolver` to extract from token. `@Role` annotation + `HandlerInterceptor` for permission check. Supports multiple user sources (admin, third-party, end-user) via type discrimination.
+
+```java
+@GetMapping("/profile")
+public UserDTO profile(User user) {  // auto-resolved from JWT
+    return userService.getProfile(user.getId());
+}
+```
+
 Automatically inject `User` (interface) into controller methods by resolving from JWT. Supports multiple user sources through a single unified interface.
 
 ## Core Design
@@ -167,7 +176,7 @@ Both can coexist. `@Role` is checked first (interceptor before method entry), th
 
 ## Error Handling
 
-See `references/error-code.md` for:
+See `references/auth-errors.md` for:
 
 - `AuthenticationException` — 401 base exception
 - `AuthorizationException` — 403 base exception
@@ -265,4 +274,4 @@ Error codes:
 ## Implementation Notes
 
 - See `references/resolver-code.md` for the complete `JwtUserArgumentResolver`, `JwtParser`, `UserTypeDetector`, `UserResolver` chain, and `@RequireUser` / `@RequireRoles` annotation processing.
-- See `references/error-code.md` for `GlobalExceptionHandler`, `AuthenticationException`, `AuthorizationException`, and unified error response.
+- See `references/auth-errors.md` for `GlobalExceptionHandler`, `AuthenticationException`, `AuthorizationException`, and unified error response.

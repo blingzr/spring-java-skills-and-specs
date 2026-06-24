@@ -5,6 +5,14 @@ description: Unified ErrorCode interface for Spring Boot — int code + string e
 
 # Error Code System
 
+**TL;DR** — Define errors as `public static final ErrorCode` constants with int code + string key + default message. Throw via `.error(args...)`. Global handler returns `{code, error, message, args}` JSON. AI must verify arg count matches `{N}` placeholders in tests.
+
+```java
+public static final ErrorCode EMAIL_EXISTS = ErrorCode.of(10000, "user.register.emailExists", "Email already registered");
+throw EMAIL_EXISTS.error();
+throw PASSWORD_TOO_SHORT.error(8);
+```
+
 Unified error code definition with `ErrorCode` interface — a single pattern for all modules. Every error carries an int code, a dotted string key, a human-readable message, and optional positional arguments.
 
 ## Response Structure

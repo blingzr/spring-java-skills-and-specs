@@ -5,6 +5,17 @@ description: Generic hierarchical tree pattern with closure table. Table naming 
 
 # Hierarchical Structure Pattern
 
+**TL;DR** — Generic closure-table hierarchy for any entity. `HierarchicalRepository<E>` + `HierarchicalService<E>`. Table naming: `{prefix}_{business}_{entity}` and `{prefix}_{business}_{entity}_closure`. Move, add-child, get-tree operations — zero duplication across tree types.
+
+```java
+public interface HierarchicalRepository<E> {
+    void move(Long nodeId, Long newParentId);
+    List<E> findChildren(Long parentId);
+    List<E> findAncestors(Long nodeId);
+    List<E> findDescendants(Long nodeId);
+}
+```
+
 Generic parent-child tree with closure table. Table naming: `{prefix}_{business}_{entity}`. Fully generic `Repository<E>` and `Service<E>` — zero duplication across different tree types.
 
 ## Table Naming Template

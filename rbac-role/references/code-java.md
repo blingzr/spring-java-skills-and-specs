@@ -230,25 +230,48 @@ public class RbacInitializer implements CommandLineRunner {
 }
 ```
 
-## Integration with spring-jwt-user
+## Integration with Auth Layer
 
-When combined, `User.hasRole()` checks against the RBAC effective role query:
+RBAC provides role/permission queries. The auth layer (JWT, session, OAuth2) calls these queries to populate the current user's permissions. Use a generic `RoleProvider` interface — decoupled from any specific auth framework:
 
 ```java
-// spring-jwt-user's User interface gains role checking
-public interface User {
-    String userId();
-    String name();
-    Set<Role> roles();
-    UserSource source();
+/**
+ * Generic role provider — called by auth layer after user authentication.
+ */
+public interface RoleProvider {
+    Set<String> getRoleCodes(Long userId);
+    Set<String> getPermissions(Long userId);
+    boolean hasPermission(Long userId, String permission);
+}
 
-    default boolean hasRole(String roleId) {
-        return roles().stream().anyMatch(r -> r.code().equalsIgnoreCase(roleId));
+/**
+ * RBAC implementation.
+ */
+@Component
+public class RbacRoleProvider implements RoleProvider {
+
+    private final EffectiveRoleQuery effectiveRoleQuery;
+
+    @Override
+    public Set<String> getRoleCodes(Long userId) {
+        return effectiveRoleQuery.findEffectiveRoles(userId, null).stream()
+            .map(Role::code)
+            .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<String> getPermissions(Long userId) {
+        return effectiveRoleQuery.findPermissions(userId, null);
+    }
+
+    @Override
+    public boolean hasPermission(Long userId, String permission) {
+        return getPermissions(userId).contains(permission);
     }
 }
 ```
 
-The `@RequireRoles` annotation from spring-jwt-user uses roles populated by RBAC query.
+Any auth framework can inject `RoleProvider` to populate the security context after authentication.
 
 ## Configuration Example (application.yml)
 

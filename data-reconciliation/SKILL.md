@@ -5,6 +5,17 @@ description: Cross-service data reconciliation pattern for verifying data consis
 
 # Data Reconciliation Pattern
 
+**TL;DR** — Generic `ReconcilePlugin<A,B>` pipeline: Pull raw data → Compare A vs B → StateCheck result → Replay fix. Time-windowed, idempotent, configurable per entity pair. Use `@ReconcileTask` to declare a reconciliation job.
+
+```java
+public interface ReconcilePlugin<A, B> {
+    List<A> pullA(TimeWindow window);
+    List<B> pullB(TimeWindow window);
+    CompareResult compare(A a, B b);
+    void replay(Discrepancy d);
+}
+```
+
 Reconciliation workflow between internal service A and external service B, using time-windowed data fetching with persistent raw storage. All time intervals, retry policies, and execution parameters are configuration-driven.
 
 ## Framework-First Design

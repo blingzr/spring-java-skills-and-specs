@@ -5,6 +5,18 @@ description: Money and quantity balance management system with 6 complexity leve
 
 # Money & Quantity System
 
+**TL;DR** — 6-level balance management: L1 direct update → L2 freeze/unfreeze → L3 audit records → L4 idempotent ops → L5 flow tracking (AF/AO/FA/FO/OA/OF) → L6 sub-accounts + reconciliation. Generic `AccountService<B>` with composite key. Never update balance without an audit trail at L3+.
+
+```java
+public interface AccountService<B> {
+    void credit(B balance, BigDecimal amount);
+    void debit(B balance, BigDecimal amount);
+    void freeze(B balance, BigDecimal amount);
+    void unfreeze(B balance, BigDecimal amount);
+    List<AuditRecord> getAudit(B balance, TimeWindow window);
+}
+```
+
 Generic balance/quantity management with 6 complexity levels. Each level adds capabilities; pick the lowest level that meets your business needs.
 
 ## Core Concepts
